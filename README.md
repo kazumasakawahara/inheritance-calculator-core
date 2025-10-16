@@ -2,6 +2,11 @@
 
 日本の民法に基づく相続計算のコアライブラリ
 
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Tests](https://github.com/kazumasakawahara/inheritance-calculator-core/actions/workflows/test.yml/badge.svg)](https://github.com/kazumasakawahara/inheritance-calculator-core/actions/workflows/test.yml)
+[![Test Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/kazumasakawahara/inheritance-calculator-core)
+
 ## 概要
 
 `inheritance-calculator-core`は、日本の民法に基づいた相続人の資格確定と相続割合の計算を行うPythonライブラリです。
