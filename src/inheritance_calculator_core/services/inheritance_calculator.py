@@ -13,6 +13,7 @@ from ..models.inheritance import (
     SubstitutionType,
     Heir,
 )
+from ..models.value_objects import PersonID
 from ..utils.exceptions import RenunciationConflictError
 from .heir_validator import HeirValidator
 from .share_calculator import ShareCalculator
@@ -26,11 +27,21 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
     相続人の資格確定、相続割合の計算、結果の生成を統合的に実行する。
     """
 
-    def __init__(self) -> None:
-        """初期化"""
+    def __init__(
+        self,
+        validator: Optional[HeirValidator] = None,
+        calculator: Optional[ShareCalculator] = None
+    ) -> None:
+        """
+        初期化
+
+        Args:
+            validator: 相続人バリデータ（省略時は新規インスタンスを作成）
+            calculator: 相続割合計算サービス（省略時は新規インスタンスを作成）
+        """
         super().__init__()
-        self.validator = HeirValidator()
-        self.calculator = ShareCalculator()
+        self.validator = validator if validator is not None else HeirValidator()
+        self.calculator = calculator if calculator is not None else ShareCalculator()
 
     def calculate(
         self,
@@ -42,10 +53,10 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
         renounced: Optional[List[Person]] = None,
         disqualified: Optional[List[Person]] = None,
         disinherited: Optional[List[Person]] = None,
-        sibling_blood_types: Optional[Dict[str, BloodType]] = None,
-        retransfer_heirs_info: Optional[Dict[str, List[Person]]] = None,
-        retransfer_relationships: Optional[Dict[str, Dict[str, str]]] = None,
-        second_inheritance_renounced: Optional[Dict[str, List[Person]]] = None,
+        sibling_blood_types: Optional[Dict[PersonID, BloodType]] = None,
+        retransfer_heirs_info: Optional[Dict[PersonID, List[Person]]] = None,
+        retransfer_relationships: Optional[Dict[PersonID, Dict[PersonID, str]]] = None,
+        second_inheritance_renounced: Optional[Dict[PersonID, List[Person]]] = None,
     ) -> InheritanceResult:
         """
         相続計算を実行
@@ -59,12 +70,10 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
             renounced: 相続放棄者
             disqualified: 相続欠格者
             disinherited: 相続廃除者
-            sibling_blood_types: 兄弟姉妹の血縁タイプ
-            retransfer_heirs_info: 再転相続先の情報（相続人ID: 再転相続先リスト）
-            retransfer_relationships: 再転相続先の関係情報（相続人ID: {人物ID: 関係タイプ}）
-                例: {"deceased_heir_id": {"person1_id": "spouse", "person2_id": "child"}}
-            second_inheritance_renounced: 第2次相続の放棄者情報（死亡相続人ID: 放棄者リスト）
-                例: {"deceased_heir_id": [person1, person2]}
+            sibling_blood_types: 兄弟姉妹の血縁タイプ（PersonID → BloodType）
+            retransfer_heirs_info: 再転相続先の情報（相続人PersonID → 再転相続先リスト）
+            retransfer_relationships: 再転相続先の関係情報（相続人PersonID → {人物PersonID → 関係タイプ}）
+            second_inheritance_renounced: 第2次相続の放棄者情報（死亡相続人PersonID → 放棄者リスト）
                 判例により、第2次相続を放棄した者は第1次相続のみを承認できない
 
         Returns:
@@ -212,27 +221,27 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
         children: List[Person],
         parents: List[Person],
         siblings: List[Person],
-        shares: Dict[str, Fraction]
+        shares: Dict[PersonID, Fraction]
     ) -> None:
         """相続人を結果に追加"""
         # 配偶者
         for spouse in spouses:
-            share = shares.get(str(spouse.id), Fraction(0, 1))
+            share = shares.get(spouse.id, Fraction(0, 1))
             result.add_heir(spouse, HeritageRank.SPOUSE, share)
 
         # 子
         for child in children:
-            share = shares.get(str(child.id), Fraction(0, 1))
+            share = shares.get(child.id, Fraction(0, 1))
             result.add_heir(child, HeritageRank.FIRST, share)
 
         # 直系尊属
         for parent in parents:
-            share = shares.get(str(parent.id), Fraction(0, 1))
+            share = shares.get(parent.id, Fraction(0, 1))
             result.add_heir(parent, HeritageRank.SECOND, share)
 
         # 兄弟姉妹
         for sibling in siblings:
-            share = shares.get(str(sibling.id), Fraction(0, 1))
+            share = shares.get(sibling.id, Fraction(0, 1))
             result.add_heir(sibling, HeritageRank.THIRD, share)
 
         # 相続分の計算根拠を追加
@@ -246,9 +255,9 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
     def _process_retransfer_inheritance_with_info(
         self,
         result: InheritanceResult,
-        retransfer_info: Dict[str, List[Person]],
-        retransfer_relationships: Dict[str, Dict[str, str]],
-        second_inheritance_renounced: Dict[str, List[Person]]
+        retransfer_info: Dict[PersonID, List[Person]],
+        retransfer_relationships: Dict[PersonID, Dict[PersonID, str]],
+        second_inheritance_renounced: Dict[PersonID, List[Person]]
     ) -> InheritanceResult:
         """
         再転相続の処理（情報付き版）
@@ -283,7 +292,7 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
 
         # 再転相続の処理
         for original_heir in retransfer_heirs:
-            heir_id = str(original_heir.person.id)
+            heir_id = original_heir.person.id
             retransfer_targets = retransfer_info.get(heir_id, [])
 
             if not retransfer_targets:
@@ -471,7 +480,7 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
         self,
         retransfer_targets: List[Person],
         deceased_heir: Person,
-        relationship_hints: Optional[Dict[str, str]] = None
+        relationship_hints: Optional[Dict[PersonID, str]] = None
     ) -> Dict[str, List[Person]]:
         """
         再転相続先を相続順位別に分類
@@ -483,7 +492,7 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
             retransfer_targets: 再転相続先のリスト
             deceased_heir: 遺産分割前に死亡した相続人
             relationship_hints: 人物IDから関係タイプへのマッピング
-                キー: 人物ID（str(person.id)）
+                キー: PersonID
                 値: 'spouse' | 'child' | 'parent' | 'sibling'
 
         Returns:
@@ -503,7 +512,7 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
 
         # relationship_hintsを使って分類
         for person in retransfer_targets:
-            person_id = str(person.id)
+            person_id = person.id
             relationship = relationship_hints.get(person_id, 'child')  # デフォルトは子
 
             if relationship == 'spouse':
@@ -571,7 +580,7 @@ class InheritanceCalculator(BaseService[InheritanceResult]):
         result = []
         all_heirs = spouses + children + parents + siblings
         for person in all_heirs:
-            person_id = str(person.id)
+            person_id = person.id
             if person_id in statutory_shares:
                 # 元の相続分 × 再転相続先の法定相続分
                 final_share = original_share * statutory_shares[person_id]

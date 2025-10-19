@@ -61,15 +61,15 @@ class TestRetransferInheritance:
 
         # 再転相続先の情報を設定（配偶者1人・子2人）
         retransfer_info = {
-            str(child_b.id): [spouse_c, child_d, child_e]
+            child_b.id: [spouse_c, child_d, child_e]
         }
 
         # 再転相続先の関係情報を設定
         retransfer_relationships = {
-            str(child_b.id): {
-                str(spouse_c.id): 'spouse',
-                str(child_d.id): 'child',
-                str(child_e.id): 'child'
+            child_b.id: {
+                spouse_c.id: 'spouse',
+                child_d.id: 'child',
+                child_e.id: 'child'
             }
         }
 
@@ -136,7 +136,7 @@ class TestRetransferInheritance:
 
         # 再転相続先の情報
         retransfer_info = {
-            str(child_b.id): [grandchild_c]
+            child_b.id: [grandchild_c]
         }
 
         result = calculator.calculate(
@@ -233,8 +233,8 @@ class TestRetransferInheritance:
 
         # 再転相続先の情報
         retransfer_info = {
-            str(child_b.id): [grandchild_d],
-            str(child_c.id): [grandchild_e]
+            child_b.id: [grandchild_d],
+            child_c.id: [grandchild_e]
         }
 
         result = calculator.calculate(

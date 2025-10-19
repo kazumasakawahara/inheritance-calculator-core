@@ -168,13 +168,12 @@ class TestNeo4jService:
         sample_result
     ):
         """兄弟姉妹がいるケースの保存テスト"""
-        siblings = [
-            Person(name="兄", is_alive=True, gender=Gender.MALE),
-            Person(name="妹", is_alive=True, gender=Gender.FEMALE)
-        ]
+        brother = Person(name="兄", is_alive=True, gender=Gender.MALE)
+        sister = Person(name="妹", is_alive=True, gender=Gender.FEMALE)
+        siblings = [brother, sister]
         sibling_blood_types = {
-            "兄": BloodType.FULL,
-            "妹": BloodType.HALF
+            brother.id: BloodType.FULL,
+            sister.id: BloodType.HALF
         }
 
         with patch.object(neo4j_service.person_repo, 'create') as mock_create, \
@@ -318,9 +317,10 @@ class TestNeo4jService:
     ):
         """複雑なケースの保存テスト（配偶者、子、親、兄弟、放棄者）"""
         parents = [Person(name="父", is_alive=True)]
-        siblings = [Person(name="兄", is_alive=True)]
+        brother = Person(name="兄", is_alive=True)
+        siblings = [brother]
         renounced = [Person(name="放棄者", is_alive=True)]
-        sibling_blood_types = {"兄": BloodType.FULL}
+        sibling_blood_types = {brother.id: BloodType.FULL}
 
         with patch.object(neo4j_service.person_repo, 'create') as mock_create, \
              patch.object(neo4j_service.person_repo, 'find_by_name') as mock_find, \
@@ -428,7 +428,7 @@ class TestNeo4jService:
         with patch.object(neo4j_service.person_repo, 'create'), \
              patch.object(neo4j_service.person_repo, 'find_by_name', return_value=None), \
              patch.object(neo4j_service.relationship_repo, 'create_renounced') as mock_renounced_rel, \
-             patch('src.services.neo4j_service.date') as mock_date:
+             patch('inheritance_calculator_core.services.neo4j_service.date') as mock_date:
 
             # date.today()をモック
             mock_today = date(2025, 10, 16)

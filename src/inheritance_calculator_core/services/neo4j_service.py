@@ -11,6 +11,7 @@ from ..database.repositories import PersonRepository, RelationshipRepository
 from ..models.person import Person
 from ..models.relationship import BloodType
 from ..models.inheritance import InheritanceResult
+from ..models.value_objects import PersonID
 from ..utils.exceptions import DatabaseException
 
 
@@ -43,7 +44,7 @@ class Neo4jService:
         renounced: List[Person],
         disqualified: List[Person],
         disinherited: List[Person],
-        sibling_blood_types: Dict[str, BloodType],
+        sibling_blood_types: Dict[PersonID, BloodType],
         result: InheritanceResult
     ) -> None:
         """
@@ -102,7 +103,7 @@ class Neo4jService:
                 for sibling in siblings:
                     self.logger.info(f"Saving sibling: {sibling.name}")
                     self.person_repo.create(sibling)
-                    blood_type = sibling_blood_types.get(sibling.name, BloodType.FULL)
+                    blood_type = sibling_blood_types.get(sibling.id, BloodType.FULL)
                     self.relationship_repo.create_sibling_of(
                         person1_name=decedent.name,
                         person2_name=sibling.name,

@@ -5,7 +5,7 @@
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Tests](https://github.com/kazumasakawahara/inheritance-calculator-core/actions/workflows/test.yml/badge.svg)](https://github.com/kazumasakawahara/inheritance-calculator-core/actions/workflows/test.yml)
-[![Test Coverage: 100%](https://img.shields.io/badge/coverage-100%25-brightgreen.svg)](https://github.com/kazumasakawahara/inheritance-calculator-core)
+[![Test Coverage: 59%](https://img.shields.io/badge/coverage-59%25-yellow.svg)](https://github.com/kazumasakawahara/inheritance-calculator-core)
 
 ## 概要
 
@@ -71,4 +71,4 @@ MIT License
 
 ---
 
-**バージョン**: 1.0.0
+**バージョン**: 0.9.0

@@ -46,19 +46,19 @@ class TestRetransferRenunciationConstraint:
 
         # 再転相続先の情報: CはAの相続を承認しようとしている
         retransfer_info = {
-            str(child_b.id): [grandchild_c]
+            child_b.id: [grandchild_c]
         }
 
         # 再転相続先の関係情報
         retransfer_relationships = {
-            str(child_b.id): {
-                str(grandchild_c.id): 'child'
+            child_b.id: {
+                grandchild_c.id: 'child'
             }
         }
 
         # 第2次相続（Bの相続）をCが放棄
         second_inheritance_renounced = {
-            str(child_b.id): [grandchild_c]
+            child_b.id: [grandchild_c]
         }
 
         # 検証: 判例制約違反のためRenunciationConflictErrorが発生すべき
@@ -109,12 +109,12 @@ class TestRetransferRenunciationConstraint:
 
         # CはAの相続もBの相続も放棄する場合、再転相続先には含まれない
         retransfer_info = {
-            str(child_b.id): []  # Cは含まれていない
+            child_b.id: []  # Cは含まれていない
         }
 
         # 第2次相続（Bの相続）をCが放棄
         second_inheritance_renounced = {
-            str(child_b.id): [grandchild_c]
+            child_b.id: [grandchild_c]
         }
 
         # 検証: エラーが発生しない（両方放棄は許可される）
@@ -160,18 +160,18 @@ class TestRetransferRenunciationConstraint:
 
         # CはAの相続もBの相続も承認
         retransfer_info = {
-            str(child_b.id): [grandchild_c]
+            child_b.id: [grandchild_c]
         }
 
         retransfer_relationships = {
-            str(child_b.id): {
-                str(grandchild_c.id): 'child'
+            child_b.id: {
+                grandchild_c.id: 'child'
             }
         }
 
         # 第2次相続（Bの相続）の放棄者なし
         second_inheritance_renounced = {
-            str(child_b.id): []
+            child_b.id: []
         }
 
         # 検証: エラーが発生しない（両方承認は許可される）
@@ -219,12 +219,12 @@ class TestRetransferRenunciationConstraint:
         # CがAの相続を放棄した場合、再転相続先には含まれない
         # （Aの相続権がないので、Bから承継する権利もない）
         retransfer_info = {
-            str(child_b.id): []  # Cは含まれていない（Aの相続を放棄）
+            child_b.id: []  # Cは含まれていない（Aの相続を放棄）
         }
 
         # Bの相続は承認（放棄者なし）
         second_inheritance_renounced = {
-            str(child_b.id): []
+            child_b.id: []
         }
 
         # 検証: エラーが発生しない
@@ -276,19 +276,19 @@ class TestRetransferRenunciationConstraint:
 
         # CとDの両方がAの相続を承認しようとする（ただしCはBの相続を放棄）
         retransfer_info = {
-            str(child_b.id): [grandchild_c, grandchild_d]
+            child_b.id: [grandchild_c, grandchild_d]
         }
 
         retransfer_relationships = {
-            str(child_b.id): {
-                str(grandchild_c.id): 'child',
-                str(grandchild_d.id): 'child'
+            child_b.id: {
+                grandchild_c.id: 'child',
+                grandchild_d.id: 'child'
             }
         }
 
         # CがBの相続を放棄
         second_inheritance_renounced = {
-            str(child_b.id): [grandchild_c]
+            child_b.id: [grandchild_c]
         }
 
         # 検証: Cが含まれているためRenunciationConflictErrorが発生すべき

@@ -1,7 +1,8 @@
 """データベース層の基底クラスとインターフェース"""
 from abc import ABC, abstractmethod
-from typing import Generic, TypeVar, Optional, List, Any
-from uuid import UUID
+from typing import Generic, TypeVar, Optional, List, Any, Dict
+
+from ..models.value_objects import PersonID
 
 
 T = TypeVar('T')
@@ -28,7 +29,7 @@ class Repository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def get_by_id(self, entity_id: UUID) -> Optional[T]:
+    async def get_by_id(self, entity_id: PersonID) -> Optional[T]:
         """
         IDでエンティティを取得
 
@@ -61,7 +62,7 @@ class Repository(ABC, Generic[T]):
         pass
 
     @abstractmethod
-    async def delete(self, entity_id: UUID) -> bool:
+    async def delete(self, entity_id: PersonID) -> bool:
         """
         エンティティを削除
 
@@ -90,6 +91,97 @@ class Repository(ABC, Generic[T]):
 
         Raises:
             DatabaseConnectionError: データベース接続エラー
+        """
+        pass
+
+
+class BaseRepository(ABC, Generic[T]):
+    """
+    同期版リポジトリの基底クラス
+
+    Note:
+        現在の実装はNeo4jの同期ドライバーを使用しているため、
+        同期メソッドとして定義しています。
+    """
+
+    @abstractmethod
+    def create(self, entity: T) -> T:
+        """
+        エンティティを作成
+
+        Args:
+            entity: 作成するエンティティ
+
+        Returns:
+            作成されたエンティティ
+
+        Raises:
+            DatabaseException: データベースエラー
+        """
+        pass
+
+    @abstractmethod
+    def find_by_id(self, entity_id: PersonID) -> Optional[T]:
+        """
+        IDでエンティティを取得
+
+        Args:
+            entity_id: エンティティID
+
+        Returns:
+            エンティティ（存在しない場合はNone）
+
+        Raises:
+            DatabaseException: データベースエラー
+        """
+        pass
+
+    @abstractmethod
+    def update(self, entity: T) -> T:
+        """
+        エンティティを更新
+
+        Args:
+            entity: 更新するエンティティ
+
+        Returns:
+            更新されたエンティティ
+
+        Raises:
+            DatabaseException: データベースエラー
+        """
+        pass
+
+    @abstractmethod
+    def delete(self, entity_id: PersonID) -> bool:
+        """
+        エンティティを削除
+
+        Args:
+            entity_id: エンティティID
+
+        Returns:
+            削除成功の場合True
+
+        Raises:
+            DatabaseException: データベースエラー
+        """
+        pass
+
+    @abstractmethod
+    def find_all(self, limit: Optional[int] = None, offset: int = 0) -> List[T]:
+        """
+        全エンティティを取得
+
+        Args:
+            limit: 取得件数制限
+            offset: 取得開始位置
+
+        Returns:
+            エンティティのリスト
+
+        Raises:
+            DatabaseException: データベースエラー
         """
         pass
 

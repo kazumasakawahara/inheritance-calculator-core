@@ -223,8 +223,8 @@ class TestInheritanceCalculatorSiblingBloodTypes:
         sister = Person(name="妹", is_alive=True)
 
         blood_types = {
-            str(brother.id): BloodType.FULL,
-            str(sister.id): BloodType.FULL,
+            brother.id: BloodType.FULL,
+            sister.id: BloodType.FULL,
         }
 
         result = calculator.calculate(
@@ -251,8 +251,8 @@ class TestInheritanceCalculatorSiblingBloodTypes:
         half_blood_brother = Person(name="半血兄", is_alive=True)
 
         blood_types = {
-            str(full_blood_brother.id): BloodType.FULL,
-            str(half_blood_brother.id): BloodType.HALF,
+            full_blood_brother.id: BloodType.FULL,
+            half_blood_brother.id: BloodType.HALF,
         }
 
         result = calculator.calculate(

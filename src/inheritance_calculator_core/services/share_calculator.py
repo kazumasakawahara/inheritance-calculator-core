@@ -8,6 +8,7 @@ from fractions import Fraction
 from ..models.person import Person
 from ..models.relationship import BloodType
 from ..models.inheritance import HeritageRank
+from ..models.value_objects import PersonID
 from .base import BaseService
 
 
@@ -24,8 +25,8 @@ class ShareCalculator(BaseService[Person]):
         first_rank: List[Person],
         second_rank: List[Person],
         third_rank: List[Person],
-        third_rank_blood_types: Optional[Dict[str, BloodType]] = None
-    ) -> Dict[str, Fraction]:
+        third_rank_blood_types: Optional[Dict[PersonID, BloodType]] = None
+    ) -> Dict[PersonID, Fraction]:
         """
         相続割合を計算
 
@@ -34,15 +35,15 @@ class ShareCalculator(BaseService[Person]):
             first_rank: 第1順位の相続人（子）
             second_rank: 第2順位の相続人（直系尊属）
             third_rank: 第3順位の相続人（兄弟姉妹）
-            third_rank_blood_types: 第3順位の血縁タイプ（人物ID → BloodType）
+            third_rank_blood_types: 第3順位の血縁タイプ（PersonID → BloodType）
 
         Returns:
-            人物ID → 相続割合の辞書
+            PersonID → 相続割合の辞書
         """
         if third_rank_blood_types is None:
             third_rank_blood_types = {}
 
-        shares: Dict[str, Fraction] = {}
+        shares: Dict[PersonID, Fraction] = {}
 
         # 配偶者のみの場合
         if spouses and not first_rank and not second_rank and not third_rank:
@@ -117,17 +118,17 @@ class ShareCalculator(BaseService[Person]):
         self.log_warning("No heirs found")
         return shares
 
-    def _calculate_spouse_only(self, spouses: List[Person]) -> Dict[str, Fraction]:
+    def _calculate_spouse_only(self, spouses: List[Person]) -> Dict[PersonID, Fraction]:
         """配偶者のみの場合（全部相続）"""
         shares = {}
         share_per_spouse = Fraction(1, len(spouses))
         for spouse in spouses:
-            shares[str(spouse.id)] = share_per_spouse
+            shares[spouse.id] = share_per_spouse
         return shares
 
     def _calculate_spouse_and_children(
         self, spouses: List[Person], children: List[Person]
-    ) -> Dict[str, Fraction]:
+    ) -> Dict[PersonID, Fraction]:
         """
         配偶者と子の場合
 
@@ -141,27 +142,27 @@ class ShareCalculator(BaseService[Person]):
         spouse_total = Fraction(1, 2)
         share_per_spouse = spouse_total / len(spouses)
         for spouse in spouses:
-            shares[str(spouse.id)] = share_per_spouse
+            shares[spouse.id] = share_per_spouse
 
         # 子: 1/2を均等に分割
         children_total = Fraction(1, 2)
         share_per_child = children_total / len(children)
         for child in children:
-            shares[str(child.id)] = share_per_child
+            shares[child.id] = share_per_child
 
         return shares
 
-    def _calculate_children_only(self, children: List[Person]) -> Dict[str, Fraction]:
+    def _calculate_children_only(self, children: List[Person]) -> Dict[PersonID, Fraction]:
         """子のみの場合（均等分割）"""
         shares = {}
         share_per_child = Fraction(1, len(children))
         for child in children:
-            shares[str(child.id)] = share_per_child
+            shares[child.id] = share_per_child
         return shares
 
     def _calculate_spouse_and_parents(
         self, spouses: List[Person], parents: List[Person]
-    ) -> Dict[str, Fraction]:
+    ) -> Dict[PersonID, Fraction]:
         """
         配偶者と直系尊属の場合
 
@@ -175,30 +176,30 @@ class ShareCalculator(BaseService[Person]):
         spouse_total = Fraction(2, 3)
         share_per_spouse = spouse_total / len(spouses)
         for spouse in spouses:
-            shares[str(spouse.id)] = share_per_spouse
+            shares[spouse.id] = share_per_spouse
 
         # 直系尊属: 1/3を均等に分割
         parents_total = Fraction(1, 3)
         share_per_parent = parents_total / len(parents)
         for parent in parents:
-            shares[str(parent.id)] = share_per_parent
+            shares[parent.id] = share_per_parent
 
         return shares
 
-    def _calculate_parents_only(self, parents: List[Person]) -> Dict[str, Fraction]:
+    def _calculate_parents_only(self, parents: List[Person]) -> Dict[PersonID, Fraction]:
         """直系尊属のみの場合（均等分割）"""
         shares = {}
         share_per_parent = Fraction(1, len(parents))
         for parent in parents:
-            shares[str(parent.id)] = share_per_parent
+            shares[parent.id] = share_per_parent
         return shares
 
     def _calculate_spouse_and_siblings(
         self,
         spouses: List[Person],
         siblings: List[Person],
-        blood_types: Dict[str, BloodType]
-    ) -> Dict[str, Fraction]:
+        blood_types: Dict[PersonID, BloodType]
+    ) -> Dict[PersonID, Fraction]:
         """
         配偶者と兄弟姉妹の場合
 
@@ -215,7 +216,7 @@ class ShareCalculator(BaseService[Person]):
         spouse_total = Fraction(3, 4)
         share_per_spouse = spouse_total / len(spouses)
         for spouse in spouses:
-            shares[str(spouse.id)] = share_per_spouse
+            shares[spouse.id] = share_per_spouse
 
         # 兄弟姉妹: 1/4を血縁タイプに応じて分割
         siblings_total = Fraction(1, 4)
@@ -228,8 +229,8 @@ class ShareCalculator(BaseService[Person]):
     def _calculate_siblings_only(
         self,
         siblings: List[Person],
-        blood_types: Dict[str, BloodType]
-    ) -> Dict[str, Fraction]:
+        blood_types: Dict[PersonID, BloodType]
+    ) -> Dict[PersonID, Fraction]:
         """
         兄弟姉妹のみの場合
 
@@ -245,8 +246,8 @@ class ShareCalculator(BaseService[Person]):
         self,
         siblings: List[Person],
         total: Fraction,
-        blood_types: Dict[str, BloodType]
-    ) -> Dict[str, Fraction]:
+        blood_types: Dict[PersonID, BloodType]
+    ) -> Dict[PersonID, Fraction]:
         """
         兄弟姉妹の相続分を計算
 
@@ -255,17 +256,17 @@ class ShareCalculator(BaseService[Person]):
         Args:
             siblings: 兄弟姉妹のリスト
             total: 兄弟姉妹全体の相続分
-            blood_types: 血縁タイプ（人物ID → BloodType）
+            blood_types: 血縁タイプ（PersonID → BloodType）
 
         Returns:
-            人物ID → 相続割合の辞書
+            PersonID → 相続割合の辞書
         """
         shares = {}
 
         # 全血・半血の人数をカウント
         full_blood_count = sum(
             1 for s in siblings
-            if blood_types.get(str(s.id), BloodType.FULL) == BloodType.FULL
+            if blood_types.get(s.id, BloodType.FULL) == BloodType.FULL
         )
         half_blood_count = len(siblings) - full_blood_count
 
@@ -275,13 +276,13 @@ class ShareCalculator(BaseService[Person]):
 
         # 各兄弟姉妹の相続分を計算
         for sibling in siblings:
-            blood_type = blood_types.get(str(sibling.id), BloodType.FULL)
+            blood_type = blood_types.get(sibling.id, BloodType.FULL)
 
             if blood_type == BloodType.FULL:
                 # 全血: total / total_weight
-                shares[str(sibling.id)] = total / total_weight
+                shares[sibling.id] = total / total_weight
             else:
                 # 半血: (total / total_weight) * 1/2
-                shares[str(sibling.id)] = (total / total_weight) * Fraction(1, 2)
+                shares[sibling.id] = (total / total_weight) * Fraction(1, 2)
 
         return shares
